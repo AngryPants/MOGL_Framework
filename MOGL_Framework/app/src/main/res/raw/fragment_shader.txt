@@ -1,0 +1,41 @@
+precision mediump float; //Set the default precision to medium. We don't need as high of a precision in the fragment shader.
+
+//Constant Values
+const int MAX_TEXTURES = 8;
+
+//Uniforms
+uniform float u_AlphaDiscardValue;
+uniform bool u_TextureEnabled[MAX_TEXTURES];
+uniform sampler2D u_Textures[MAX_TEXTURES];
+
+//These were passed from the vertex shader.
+varying vec4 v_Color;
+varying vec2 v_TexCoordinate; //Interpolated texture coordinate per fragment.
+
+void main() {
+	vec4 color = vec4(0, 0, 0, 0);
+	float alphaValue = 0.0; //For some reason in OpenGL ES 2 floats cannot have the .f at the end. Declare it like a double. Apparently it's fixed in OpenGL ES 3.
+	float numEnabledTextures = 0.0; //Have to use a float since OpenGL ES has problems dividing floats with ints.
+
+	for (int i = 0; i < MAX_TEXTURES; ++i) {
+		if (u_TextureEnabled[i] == true) {
+			color += texture2D(u_Textures[i], v_TexCoordinate);
+			alphaValue += color.a;
+			numEnabledTextures += 1.0;
+		}
+	}
+
+	if (numEnabledTextures == 0.0) {
+        color = v_Color;
+	} else {
+        //Discard this fragment if the alpha value is too low.
+        alphaValue /= numEnabledTextures;
+        if (alphaValue < u_AlphaDiscardValue) {
+        	discard;
+        }
+        color = color/numEnabledTextures;
+	}
+
+    color = texture2D(u_Textures[0], v_TexCoordinate);
+    gl_FragColor = color;
+}
