@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
+import android.opengl.Matrix;
 
 import java.util.HashMap;
 
@@ -65,7 +66,7 @@ public class TextureManager {
 	static public boolean HasTexture(final String _textureName) {
 		return textureList.containsKey(_textureName);
 	}
-	static public int AddTexture(final String _textureName, final Context _context, final int _resourceId) {
+	static public int AddTexture(final String _textureName, final Context _context, final int _resourceId, final boolean _invertY) {
 		//Create an int array of size 1 as primitives are pass by reference but arrays are pass by reference.
 		final int[] textureHandle = new int[1];
 
@@ -83,7 +84,14 @@ public class TextureManager {
 			options.inScaled = false; //No pre-scaling
 
 			//Read in the resource
-			final Bitmap bitmap = BitmapFactory.decodeResource(_context.getResources(), _resourceId, options);
+			Bitmap bitmap = BitmapFactory.decodeResource(_context.getResources(), _resourceId, options);
+			Bitmap bitmapFlipped = null;
+
+			if (_invertY) {
+				android.graphics.Matrix mirrorMatrix = new android.graphics.Matrix();
+				mirrorMatrix.preScale(1.0f, -1.0f);
+				bitmapFlipped = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), mirrorMatrix, false);
+			}
 
 			//Bind to the texture in OpenGL
 			GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
@@ -98,8 +106,13 @@ public class TextureManager {
 			//GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
 			//GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
 
-			//Load the bitmap into the bound texture.
-			GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+			if (_invertY) {
+				GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmapFlipped, 0);
+				bitmapFlipped.recycle();
+			} else {
+				//Load the bitmap into the bound texture.
+				GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+			}
 
 			//Recycle the bitmap, since its data has been loaded into OpenGL.
 			bitmap.recycle();

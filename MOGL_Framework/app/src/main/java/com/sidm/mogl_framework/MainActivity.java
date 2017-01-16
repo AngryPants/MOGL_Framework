@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.view.Window;
+import android.view.WindowManager;
 
 public class MainActivity extends Activity {
 
@@ -14,7 +16,11 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+
+		//Hide Title
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		//Hide Top (Fullscreen)
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 		glSurfaceView = new GLSurfaceView(this);
 

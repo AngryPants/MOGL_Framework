@@ -214,7 +214,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		//Initialise Textures
 		textures = new Textures();
 		textures.data[0].name = "Test Texture";
-		textures.data[0].handle = TextureManager.AddTexture(textures.data[0].name, context, R.drawable.test_texture);
+		textures.data[0].handle = TextureManager.AddTexture(textures.data[0].name, context, R.drawable.test_texture, true);
 
 		//Initialise Shader.
 		String vertexShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.vertex_shader);
@@ -256,8 +256,6 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 
 		modelStack.PushMatrix();
 			//modelStack.Translate(0.5f, 0.5f, 0.0f);
-			modelStack.Rotate(180.0f, 0.0f, 0.0f, 1.0f);
-			modelStack.Scale(2.0f, 2.0f, 2.0f);
 			Render(mesh, textures);
 		modelStack.PopMatrix();
 	}
