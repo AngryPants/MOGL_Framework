@@ -105,13 +105,14 @@ public class GLESShaderProgram {
 
 			//Link the 2 shaders together into a program.
 			GLES20.glLinkProgram(shaderProgramHandle);
+			Log.e("ShaderHelper", "Shader Creation Info Log: " + GLES20.glGetProgramInfoLog(shaderProgramHandle));
 
 			//Get the link status.
 			//EDIT: Not all phones support this. So let's just skip the check and pray for the best.
 			/*final int[] linkStatus = new int[1];
 			GLES20.glGetShaderiv(shaderProgramHandle, GLES20.GL_LINK_STATUS, linkStatus, 0);
 			if (linkStatus[0] == 0) {
-				Log.e("ShaderHelper", "Error compiling program: " + GLES20.glGetProgramInfoLog(shaderProgramHandle));
+				Log.e("ShaderHelper", "Error compilng program: " + GLES20.glGetProgramInfoLog(shaderProgramHandle));
 				GLES20.glDeleteProgram(shaderProgramHandle);
 				shaderProgramHandle = INVALID_SHADER_PROGRAM_ID;
 			}*/

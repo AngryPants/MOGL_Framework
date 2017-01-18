@@ -1,44 +1,44 @@
 package com.sidm.mogl_framework;
+//Created by <Insert Name> on 16/1/2017.
 
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.view.Window;
 import android.view.WindowManager;
 
-public class MainActivity extends Activity {
+public class GamePage extends Activity {
 
-	private GLSurfaceView glSurfaceView;
-
+	//Overrides
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+	public void onCreate(Bundle _savedInstanceState) {
+		//Call our parent's function.
+		super.onCreate(_savedInstanceState);
 
 		//Hide Title
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		//Hide Top (Fullscreen)
+		//Hide Top
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-		/*glSurfaceView = new GLSurfaceView(this);
+		GamePanelSurfaceView gamePanelSurfaceView = new GamePanelSurfaceView(this);
+
 		// Check if the system supports OpenGL ES 2.0.
 		final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
 		final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
 		if (configurationInfo.reqGlEsVersion >= 0x00020000) {
-			glSurfaceView.setEGLContextClientVersion(2);
-			glSurfaceView.setRenderer(new GLESRenderer(this));
+			gamePanelSurfaceView.setEGLContextClientVersion(2);
+			gamePanelSurfaceView.setGLRenderer(new GLESRenderer(this));
+			gamePanelSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+			//gamePanelSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 		} else {
 			throw new RuntimeException("The device does not support OpenGL ES 2.0!");
 		}
 
-		setContentView(glSurfaceView);*/
-
-		//Create a new Activity based on our Intent.
-		Intent intent = new Intent(MainActivity.this, GamePage.class);
-		startActivity(intent);
+		//Set our view
+		setContentView(gamePanelSurfaceView);
 	}
 
 	@Override

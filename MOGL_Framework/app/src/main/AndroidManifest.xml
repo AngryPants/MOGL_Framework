@@ -11,10 +11,19 @@
 		android:label="@string/app_name"
 		android:supportsRtl="true"
 		android:theme="@style/AppTheme">
+		<!--Main Activity-->
 		<activity android:name=".MainActivity" android:screenOrientation="landscape">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN"/>
 				<category android:name="android.intent.category.LAUNCHER"/>
+			</intent-filter>
+		</activity>
+
+		<!--GamePage-->
+		<activity android:name=".GamePage" android:screenOrientation="landscape">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN"/>
+				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
 		</activity>
 	</application>

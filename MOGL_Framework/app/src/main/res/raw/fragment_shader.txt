@@ -19,13 +19,14 @@ void main() {
 
 	for (int i = 0; i < MAX_TEXTURES; ++i) {
 		if (u_TextureEnabled[i] == true) {
-			color += texture2D(u_Textures[i], v_TexCoordinate);
-			alphaValue += color.a;
+			vec4 textureColor = texture2D(u_Textures[i], v_TexCoordinate);
+			color += textureColor;
+			alphaValue += textureColor.w;
 			numEnabledTextures += 1.0;
 		}
 	}
 
-	if (numEnabledTextures == 0.0) {
+    if (numEnabledTextures == 0.0) {
         color = v_Color;
 	} else {
         //Discard this fragment if the alpha value is too low.
@@ -36,6 +37,5 @@ void main() {
         color = color/numEnabledTextures;
 	}
 
-    color = texture2D(u_Textures[0], v_TexCoordinate);
     gl_FragColor = color;
 }

@@ -6,13 +6,15 @@ import android.opengl.GLSurfaceView;
 import android.provider.Settings;
 
 import java.io.File;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 //Created by <Insert Name> on 13/1/2017.
 
-public class MainRenderer implements GLSurfaceView.Renderer {
+public class GLESRenderer implements GLSurfaceView.Renderer {
 
 	//Declare Modes
 	static final public int CULL_FACE = GLES20.GL_CULL_FACE;
@@ -26,6 +28,8 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	static final public int STENCIL_BUFFER_BIT = GLES20.GL_STENCIL_BUFFER_BIT;
 
 	//Variable(s)
+	private Object mtLock; //Multi-Threading Lock
+	private boolean ready;
 	private Context context;
 	private GLESShaderProgram shaderProgram;
 
@@ -33,33 +37,38 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	public Matrix4x4Stack viewStack;
 	public Matrix4x4Stack projectionStack;
 
+	private Object renderLock;
+	private Queue<Runnable> renderQueue;
+
 	//Shader Attributes (Hardcode them here for now.)
-	int a_Position;
-	int a_Color;
-	int a_Normal;
-	int a_TexCoordinate;
+	private int a_Position;
+	private int a_Color;
+	private int a_Normal;
+	private int a_TexCoordinate;
 
 	//Shader Uniforms (Hardcode them here for now.)
-	int u_MVPMatrixHandle;
-	int u_AlphaDiscardValue;
-	int u_TextureOffsetHandle;
-	int u_TextureScaleHandle;
-	int[] u_TextureEnabledHandle;
-	int[] u_TexturesHandle;
-
-	//Test Variable(s)
-	Camera2D camera;
-	MeshBuilder.Mesh mesh;
-	Textures textures;
+	private int u_MVPMatrixHandle;
+	private int u_AlphaDiscardValue;
+	private int u_TextureOffsetHandle;
+	private int u_TextureScaleHandle;
+	private int[] u_TextureEnabledHandle;
+	private int[] u_TexturesHandle;
 
 	//Constructor(s)
-	public MainRenderer(Context _context) {
+	public GLESRenderer(Context _context) {
 		super();
+
+		mtLock = new Object();
 		context = _context;
+		ready = false;
+
 		//Initialise Matrix Stacks
 		modelStack = new Matrix4x4Stack();
 		viewStack = new Matrix4x4Stack();
 		projectionStack = new Matrix4x4Stack();
+
+		renderLock = new Object();
+		renderQueue = new LinkedList<>();
 
 		//Initialise Attributes
 		a_Position = 0;
@@ -75,38 +84,51 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		u_TextureEnabledHandle = new int[Textures.MAX_TEXTURES];
 		u_TexturesHandle = new int[Textures.MAX_TEXTURES];
 
-		//Test Variable(s)
-		camera = new Camera2D();
-		camera.width = 4;
-		camera.height = 3;
+		System.out.println("GLESRenderer Constructor finished.");
 	}
-	public void Exit() {
-		MeshBuilder.ReleaseMesh(mesh.name);
-		TextureManager.ReleaseTexture(textures.data[0].name);
+
+	//Status Check
+	public final boolean IsReady() {
+		synchronized (mtLock) {
+			return ready;
+		}
+	}
+	protected final void SetReady(boolean _val) {
+		synchronized (mtLock) {
+			ready = _val;
+		}
 	}
 
 	//OpenGL Stuff.
-	public void UseShader(GLESShaderProgram _shaderProgram) {
+	synchronized public void UseShader(GLESShaderProgram _shaderProgram) {
 		GLES20.glUseProgram(_shaderProgram.GetShaderProgramHandle());
 	}
-	public void Enable(final int _mode) {
+	synchronized public void Enable(final int _mode) {
 		GLES20.glEnable(_mode);
+
+		switch (_mode) {
+			case GLES20.GL_BLEND:
+				GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+				break;
+			default:
+				//Do nothing.
+		}
 	}
-	public void Disable(final int _mode) {
+	synchronized public void Disable(final int _mode) {
 		GLES20.glDisable(_mode);
 	}
-	public void SetClearColor(final float _r, final float _g, final float _b, final float _a) {
+	synchronized public void SetClearColor(final float _r, final float _g, final float _b, final float _a) {
 		GLES20.glClearColor(_r, _g, _b, _a);
 	}
-	public void ClearBuffer(final int _bufferBit) {
+	synchronized public void ClearBuffer(final int _bufferBit) {
 		GLES20.glClear(_bufferBit);
 	}
-	public void SetViewport(final int _x, final int _y, final int _width, final int _height) {
+	synchronized public void SetViewport(final int _x, final int _y, final int _width, final int _height) {
 		GLES20.glViewport(_x, _y, _width, _height);
 	}
 
 	//Camera
-	public void SetToCamera2DView(Camera2D _camera) {
+	synchronized public void SetToCamera2DView(final Camera2D _camera) {
 		modelStack.LoadIdentity();
 		viewStack.SetToLookAt(_camera.position.x, _camera.position.y, _camera.position.z, _camera.position.x, _camera.position.y, -1, 0, 1, 0);
 		Matrix4x4 orthoMatrix = new Matrix4x4();
@@ -115,7 +137,7 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 	}
 
 	//Rendering
-	public void Render(MeshBuilder.Mesh _mesh, Textures _textures) {
+	synchronized public void Render(MeshBuilder.Mesh _mesh, Textures _textures) {
 		if (_mesh == null) {
 			return;
 		}
@@ -128,7 +150,12 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		shaderProgram.UpdateUniform(u_TextureOffsetHandle, _mesh.textureOffset, 2);
 		shaderProgram.UpdateUniform(u_TextureScaleHandle, _mesh.textureScale, 2);
 
-		if (_textures != null) {
+		if (_textures == null) {
+			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
+				shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
+				shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
+			}
+		} else {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
 				if (_textures.data[i].handle == TextureManager.INVALID_TEXTURE_HANDLE) {
 					shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
@@ -140,16 +167,11 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 					shaderProgram.UpdateUniform(u_TexturesHandle[i], i);
 				}
 			}
-		} else {
-			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
-				shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
-				shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
-			}
 		}
 
 		RenderMesh(_mesh);
 
-		if (textures != null) {
+		if (_textures != null) {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
 				if (_textures.data[i].handle != TextureManager.INVALID_TEXTURE_HANDLE) {
 					shaderProgram.UnbindTexture();
@@ -194,31 +216,19 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	//Overrides
-	@Override
-	public void onSurfaceCreated(GL10 _deprecated, EGLConfig _config) {
-		//Set Background Color
-		SetClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-		//Enable Depth Testing
-		Enable(DEPTH_TEST);
-		//Enable Backface Culling
-		Enable(CULL_FACE);
+	public void AddToRenderQueue(Runnable _runnable) {
+		synchronized (renderLock) {
+			renderQueue.add(_runnable);
+		}
+	}
 
-		//The meshes and textures are for testing purposes. Eventually we need to intialise them elsewhere.
-		//Initialise Mesh(es). Make sure to do this in onSurfaceCreated and not the constructor, since
-		//OpenGL ES needs a context to be able to work, and somehow onSurfaceCreated has a context but
-		//the constructor does not. Still not sure how this works but ¯\_(ツ)_/¯.
-		//I wonder if I can do this inside a view. Theoretically should work.
-		mesh = MeshBuilder.GenerateQuad("Test Quad", new Vertex.Color(1, 1, 1, 1), 1.0f);
-
-		//Initialise Textures
-		textures = new Textures();
-		textures.data[0].name = "Test Texture";
-		textures.data[0].handle = TextureManager.AddTexture(textures.data[0].name, context, R.drawable.test_texture, true);
+	public void LoadShaders() {
+		System.out.println("GLESRenderer LoadShaders() started.");
 
 		//Initialise Shader.
 		String vertexShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.vertex_shader);
-		String fragmentShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.fragment_shader);
+		//String fragmentShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.fragment_shader);
+		String fragmentShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.fragment_shader_simple);
 		String[] attributes = new String[]{"a_Position", "a_Color", "a_Normal", "a_TexCoordinate"};
 		shaderProgram = ShaderHelper.AddShader("Simple Shader", vertexShaderSource, fragmentShaderSource, attributes);
 		//Get our attributes.
@@ -240,7 +250,31 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 		shaderProgram.UpdateUniform(u_AlphaDiscardValue, 0.1f);
 		//Use the shader.
 		UseShader(shaderProgram);
+
+		//We have finished initialising and is ready.
+		SetReady(true);
+
+		System.out.println("GLESRenderer LoadShaders() finished.");
 	}
+
+	public void DeleteShaders() {
+		//Delete Shaders
+	}
+
+	//Overrides
+	@Override
+	public void onSurfaceCreated(GL10 _deprecated, EGLConfig _config) {
+		//Set Background Color
+		SetClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+		//SetClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+		//Enable Depth Testing
+		Enable(DEPTH_TEST);
+		//Enable Backface Culling
+		Enable(CULL_FACE);
+		//Enable Blending
+		Enable(BLEND);
+	}
+
 	@Override
 	public void onSurfaceChanged(GL10 _deprecated, int _width, int _height) {
 		//Set the OpenGL viewport to the same size as the surface.
@@ -249,14 +283,15 @@ public class MainRenderer implements GLSurfaceView.Renderer {
 
 	@Override
 	public void onDrawFrame(GL10 _deprecated) {
-		ClearBuffer(DEPTH_BUFFER_BIT | COLOR_BUFFER_BIT);
-		UseShader(shaderProgram);
-
-		SetToCamera2DView(camera);
-
-		modelStack.PushMatrix();
-			//modelStack.Translate(0.5f, 0.5f, 0.0f);
-			Render(mesh, textures);
-		modelStack.PopMatrix();
+		//System.out.println("Entered onDrawFrame.");
+		synchronized (renderLock) {
+			//System.out.println("Started onDrawFrame.");
+			while (renderQueue.isEmpty() == false) {
+				renderQueue.peek().run();
+				renderQueue.remove();
+			}
+			//System.out.println("Finished onDrawFrame.");
+		}
+		//System.out.println("Exited onDrawFrame.");
 	}
 }
