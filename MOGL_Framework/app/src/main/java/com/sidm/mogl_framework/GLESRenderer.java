@@ -3,9 +3,7 @@ package com.sidm.mogl_framework;
 import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.provider.Settings;
 
-import java.io.File;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -159,7 +157,9 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
 				if (_textures.data[i].handle == TextureManager.INVALID_TEXTURE_HANDLE) {
 					shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
-					shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
+
+					//This fucking line caused SOOOOOOO MUCH PROBLEMS.
+					//shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
 				} else {
 					shaderProgram.SetActiveTexture(i);
 					shaderProgram.BindTexture(_textures.data[i].handle);
@@ -227,8 +227,7 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 
 		//Initialise Shader.
 		String vertexShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.vertex_shader);
-		//String fragmentShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.fragment_shader);
-		String fragmentShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.fragment_shader_simple);
+		String fragmentShaderSource = FileLoader.ReadTextFileFromRawResource(context, R.raw.fragment_shader);
 		String[] attributes = new String[]{"a_Position", "a_Color", "a_Normal", "a_TexCoordinate"};
 		shaderProgram = ShaderHelper.AddShader("Simple Shader", vertexShaderSource, fragmentShaderSource, attributes);
 		//Get our attributes.
@@ -266,7 +265,6 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 	public void onSurfaceCreated(GL10 _deprecated, EGLConfig _config) {
 		//Set Background Color
 		SetClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-		//SetClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 		//Enable Depth Testing
 		Enable(DEPTH_TEST);
 		//Enable Backface Culling

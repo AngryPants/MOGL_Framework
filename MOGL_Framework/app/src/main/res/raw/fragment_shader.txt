@@ -17,14 +17,14 @@ void main() {
 	float alphaValue = 0.0; //For some reason in OpenGL ES 2 floats cannot have the .f at the end. Declare it like a double. Apparently it's fixed in OpenGL ES 3.
 	float numEnabledTextures = 0.0; //Have to use a float since OpenGL ES has problems dividing floats with ints.
 
-	for (int i = 0; i < MAX_TEXTURES; ++i) {
-		if (u_TextureEnabled[i] == true) {
-			vec4 textureColor = texture2D(u_Textures[i], v_TexCoordinate);
-			color += textureColor;
-			alphaValue += textureColor.w;
-			numEnabledTextures += 1.0;
-		}
-	}
+    for (int i = 0; i < MAX_TEXTURES; ++i) {
+	    if (u_TextureEnabled[i] == true) {
+    	    vec4 textureColor = texture2D(u_Textures[i], v_TexCoordinate);
+    	    color += textureColor;
+    	    alphaValue += textureColor.w;
+    	    numEnabledTextures += 1.0;
+        }
+    }
 
     if (numEnabledTextures == 0.0) {
         color = v_Color;
