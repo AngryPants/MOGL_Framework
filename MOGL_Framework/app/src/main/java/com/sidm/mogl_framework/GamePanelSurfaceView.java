@@ -47,7 +47,7 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 
 	//Test Variable(s)
 	Camera2D testCamera;
-	private TestGameObject testGameObject;
+	private GameObject testGameObject;
 
 	//Constructor(s)
 	public GamePanelSurfaceView(Context _context) {

@@ -24,26 +24,16 @@ public class TestGameObject extends GameObject {
 		textures = new Textures();
 		textures.data[0].name = "Test GameObject Texture";
 		textures.data[0].handle = TextureManager.GetTextureID(textures.data[0].name);
-
-		SetReady(true);
 	}
 
 	//Function(s)
 	@Override
 	public void Update(double _deltaTime) {
-		if (IsReady() == false) {
-			return;
-		}
-
 		rotation += _deltaTime * 10.0f;
 	}
 
 	@Override
 	public void Draw() {
-		if (IsReady() == false) {
-			return;
-		}
-
 		Matrix4x4Stack modelStack = glESRenderer.modelStack;
 		modelStack.PushMatrix();
 			modelStack.Translate(position.x, position.y, position.z);
