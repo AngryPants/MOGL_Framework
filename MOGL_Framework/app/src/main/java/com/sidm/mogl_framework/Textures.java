@@ -5,42 +5,27 @@ import java.util.HashMap;
 
 public class Textures {
 
-	//Nested Class(es)
-	static public class TextureData {
-		public String name;
-		public int handle;
-		TextureData(String _textureName, int _handle) {
-			name = new String(_textureName);
-			handle = _handle;
-		}
-		TextureData() {
-			name = new String();
-			handle = TextureManager.INVALID_TEXTURE_HANDLE;
-		}
-	}
-
 	//Declare Static Variable(s)
 	public static int MAX_TEXTURES = 8;
 
 	//Public Variable(s)
-	public TextureData[] data;
+	public int[] handles;
 
 	Textures() {
-		data = new TextureData[MAX_TEXTURES];
+		handles = new int[MAX_TEXTURES];
 		for (int i = 0; i < MAX_TEXTURES; ++i) {
-			data[i] = new TextureData();
+			handles[i] = TextureManager.INVALID_TEXTURE_HANDLE;
 		}
 	}
 	Textures(final Textures _rhs) {
-		data = new TextureData[MAX_TEXTURES];
+		handles = new int[MAX_TEXTURES];
 		for (int i = 0; i < MAX_TEXTURES; ++i) {
-			data[i] = new TextureData(_rhs.data[i].name, _rhs.data[i].handle);
+			handles[i] = _rhs.handles[i];
 		}
 	}
 	public void Set(final Textures _other) {
 		for (int i = 0; i < MAX_TEXTURES; ++i) {
-			data[i].name = _other.data[i].name;
-			data[i].handle = _other.data[i].handle;
+			handles[i] = _other.handles[i];
 		}
 	}
 

@@ -21,9 +21,9 @@ public class TestGameObject extends GameObject {
 		scale = new Vector3(1.0f, 1.0f, 1.0f);
 		rotation = 0.0f;
 		mesh = MeshBuilder.GetMesh("Test GameObject Mesh");
-		textures = new Textures();
-		textures.data[0].name = "Test GameObject Texture";
-		textures.data[0].handle = TextureManager.GetTextureID(textures.data[0].name);
+		textures = null;
+		//textures = new Textures();
+		//textures.handles[0] = TextureManager.GetTextureID("Test GameObject Texture");
 	}
 
 	//Function(s)

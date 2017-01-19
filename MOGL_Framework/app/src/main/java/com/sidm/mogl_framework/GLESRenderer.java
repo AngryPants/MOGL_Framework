@@ -151,18 +151,20 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 		if (_textures == null) {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
 				shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
-				shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
+
+				//This fucking line caused SO MUCH TAIJI.
+				//shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
 			}
 		} else {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
-				if (_textures.data[i].handle == TextureManager.INVALID_TEXTURE_HANDLE) {
+				if (_textures.handles[i] == TextureManager.INVALID_TEXTURE_HANDLE) {
 					shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
 
-					//This fucking line caused SOOOOOOO MUCH PROBLEMS.
+					//This fucking line also caused SO MUCH TAIJI.
 					//shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
 				} else {
 					shaderProgram.SetActiveTexture(i);
-					shaderProgram.BindTexture(_textures.data[i].handle);
+					shaderProgram.BindTexture(_textures.handles[i]);
 					shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], true);
 					shaderProgram.UpdateUniform(u_TexturesHandle[i], i);
 				}
@@ -173,7 +175,7 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 
 		if (_textures != null) {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
-				if (_textures.data[i].handle != TextureManager.INVALID_TEXTURE_HANDLE) {
+				if (_textures.handles[i] != TextureManager.INVALID_TEXTURE_HANDLE) {
 					shaderProgram.UnbindTexture();
 					break;
 				}
