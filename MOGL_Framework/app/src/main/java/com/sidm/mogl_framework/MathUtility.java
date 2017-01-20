@@ -18,11 +18,48 @@ public class MathUtility {
 		return (difference <= EPSILON && difference >= -EPSILON);
 	}
 
-	public static float DegreeToRadian(float degree) {
-		return degree * PI / 180.0f;
+	public static float DegreeToRadian(float _degree) {
+		return _degree * PI / 180.0f;
 	}
-	public static float RadianToDegree(float radian) {
-		return radian * PI / 180.0f;
+	public static float RadianToDegree(float _radian) {
+		return _radian * PI / 180.0f;
+	}
+
+	public static short Clamp(short _value, short _min, short _max) {
+		if (_value < _min) {
+			return _min;
+		} else if (_value > _max) {
+			return _max;
+		} else {
+			return _value;
+		}
+	}
+	public static int Clamp(int _value, int _min, int _max) {
+		if (_value < _min) {
+			return _min;
+		} else if (_value > _max) {
+			return _max;
+		} else {
+			return _value;
+		}
+	}
+	public static float Clamp(float _value, float _min, float _max) {
+		if (_value < _min) {
+			return _min;
+		} else if (_value > _max) {
+			return _max;
+		} else {
+			return _value;
+		}
+	}
+	public static double Clamp(double _value, double _min, double _max) {
+		if (_value < _min) {
+			return _min;
+		} else if (_value > _max) {
+			return _max;
+		} else {
+			return _value;
+		}
 	}
 
 }

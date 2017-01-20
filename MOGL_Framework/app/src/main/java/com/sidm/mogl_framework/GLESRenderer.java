@@ -133,6 +133,13 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 		orthoMatrix.SetToOrtho(-_camera.width * 0.5f, _camera.width * 0.5f, -_camera.height * 0.5f, _camera.height * 0.5f, _camera.near, _camera.far);
 		projectionStack.LoadMatrix(orthoMatrix);
 	}
+	synchronized public void SetToUIView() {
+		modelStack.LoadIdentity();
+		viewStack.LoadIdentity();
+		Matrix4x4 orthoMatrix = new Matrix4x4();
+		orthoMatrix.SetToOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+		projectionStack.LoadMatrix(orthoMatrix);
+	}
 
 	//Rendering
 	synchronized public void Render(MeshBuilder.Mesh _mesh, Textures _textures) {

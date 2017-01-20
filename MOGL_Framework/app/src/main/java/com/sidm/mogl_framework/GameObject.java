@@ -6,12 +6,12 @@ import android.opengl.GLSurfaceView;
 public class GameObject {
 
 	//Variable(s)
-	protected GLSurfaceView glSurfaceView;
+	protected GamePanelSurfaceView gamePanelSurfaceView;
 	protected GLESRenderer glESRenderer;
 
 	//Constructor(s)
-	public GameObject(GLSurfaceView _glSurfaceView, GLESRenderer _glESRenderer) {
-		glSurfaceView = _glSurfaceView;
+	public GameObject(GamePanelSurfaceView _gamePanelSurfaceView, GLESRenderer _glESRenderer) {
+		gamePanelSurfaceView = _gamePanelSurfaceView;
 		glESRenderer = _glESRenderer;
 	}
 
@@ -19,6 +19,8 @@ public class GameObject {
 	public void Update(double _deltaTime) {
 	}
 	public void Draw() {
+	}
+	public void DrawUI() {
 	}
 
 	//Psuedo Destructor

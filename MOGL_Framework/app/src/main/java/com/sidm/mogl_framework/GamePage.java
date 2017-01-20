@@ -30,7 +30,7 @@ public class GamePage extends Activity {
 		final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
 		if (configurationInfo.reqGlEsVersion >= 0x00020000) {
 			gamePanelSurfaceView.setEGLContextClientVersion(2);
-			gamePanelSurfaceView.setGLRenderer(new GLESRenderer(this));
+			gamePanelSurfaceView.SetGLRenderer(new GLESRenderer(this));
 			gamePanelSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 			//gamePanelSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 		} else {

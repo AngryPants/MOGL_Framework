@@ -4,32 +4,34 @@ package com.sidm.mogl_framework;
 import android.opengl.GLSurfaceView;
 import android.provider.Settings;
 
-public class TestGameObject extends GameObject {
+public class Player extends GameObject {
 
 	//Variable(s)
 	Vector3 position;
 	Vector3 scale;
 	float rotation;
+
+	//Our player's mesh and stuff.
 	MeshBuilder.Mesh mesh;
 	Textures textures;
 
 	//Constructor(s)
-	public TestGameObject(GLSurfaceView _glSurfaceView, GLESRenderer _glESRenderer) {
-		super(_glSurfaceView, _glESRenderer);
+	public Player(GamePanelSurfaceView _gamePanelSurfaceView, GLESRenderer _glESRenderer) {
+		super(_gamePanelSurfaceView, _glESRenderer);
 
 		position = new Vector3();
 		scale = new Vector3(1.0f, 1.0f, 1.0f);
 		rotation = 0.0f;
-		mesh = MeshBuilder.GetMesh("Test GameObject Mesh");
-		textures = null;
-		//textures = new Textures();
-		//textures.handles[0] = TextureManager.GetTextureID("Test GameObject Texture");
+
+		mesh = MeshBuilder.GetMesh("Quad");
+		textures = new Textures();
+		textures.handles[0] = TextureManager.GetTextureID("Test GameObject Texture");
 	}
 
 	//Function(s)
 	@Override
 	public void Update(double _deltaTime) {
-		rotation += _deltaTime * 10.0f;
+		//rotation += _deltaTime * 10.0f;
 	}
 
 	@Override
@@ -42,6 +44,9 @@ public class TestGameObject extends GameObject {
 			glESRenderer.Render(mesh, textures);
 		modelStack.PopMatrix();
 	}
+
+	@Override
+	public void DrawUI() {}
 
 	//Psuedo Destructor
 	@Override

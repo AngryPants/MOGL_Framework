@@ -1,11 +1,8 @@
 package com.sidm.mogl_framework;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.opengl.GLES10;
-import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.provider.Settings;
+import android.support.v4.view.MotionEventCompat;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -47,7 +44,18 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 
 	//Test Variable(s)
 	Camera2D testCamera;
-	private GameObject testGameObject;
+	private Player player;
+
+	//Joysticks to handle player input.
+	public JoystickInfo joystickMove;
+	private Vector2 joystickMoveResetPosition;
+	public JoystickInfo joystickShoot;
+	private Vector2 joystickShootResetPosition;
+
+	private MeshBuilder.Mesh joystickMesh;
+	private Textures textureJoystickMove;
+	private Textures textureJoystickShoot;
+	private Textures textureJoystickPivot;
 
 	//Constructor(s)
 	public GamePanelSurfaceView(Context _context) {
@@ -57,17 +65,25 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 		//Adding the callback (this) to the surface holder to intercept events
 		getHolder().addCallback(this);
 
-		mtLock = new Object();
-
+		//Our GLESRenderer
 		glESRenderer = null;
 
 		//Create our rendering thread.
 		gameThread = new GameThread(this);
+		//A lock for locking resources during multi-threading to prevent 2 threads getting the same resource at the same time.
+		mtLock = new Object();
 
 		//Get our display metrics.
 		DisplayMetrics displayMetrics = _context.getResources().getDisplayMetrics();
 		screenWidth = displayMetrics.widthPixels;
 		screenHeight = displayMetrics.heightPixels;
+
+		//Initialise our Joysticks
+		//Coordinates range from 0.0f to 1.0f for both axis. Y-Axis starts from the top.
+		joystickMoveResetPosition = new Vector2(GetScreenRatio() * 0.2f, 0.7f);
+		joystickMove = new JoystickInfo(joystickMoveResetPosition, 0.3f);
+		joystickShootResetPosition = new Vector2(GetScreenRatio() * 0.8f, 0.7f);
+		joystickShoot = new JoystickInfo(joystickShootResetPosition, 0.3f);
 
 		System.out.println("GamePanelSurfaceView Constructor finished.");
 	}
@@ -85,28 +101,34 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 
 	//Load our assets
 	private void LoadMeshes() {
-		MeshBuilder.GenerateQuad("Test GameObject Mesh", new Vertex.Color(1.0f, 1.0f, 1.0f, 1.0f), 1.0f);
+		MeshBuilder.GenerateQuad("Quad", new Vertex.Color(0.0f, 1.0f, 1.0f, 1.0f), 1.0f);
 		System.out.println("Meshes Loaded.");
 	}
 	private void LoadTextures() {
 		TextureManager.AddTexture("Test GameObject Texture", getContext(), R.drawable.test_texture, true);
+		TextureManager.AddTexture("Joystick Move", getContext(), R.drawable.joystick_move, true);
+		TextureManager.AddTexture("Joystick Shoot", getContext(), R.drawable.joystick_shoot, true);
+		TextureManager.AddTexture("Joystick Pivot", getContext(), R.drawable.joystick_pivot, true);
 		System.out.println("Textures Loaded.");
 	}
 	private void ReleaseMeshes() {
-		MeshBuilder.ReleaseMesh("Test GameObject Mesh");
+		MeshBuilder.ReleaseMesh("Quad");
 		System.out.println("Meshes Released.");
 	}
 	private void ReleaseTextures() {
 		TextureManager.ReleaseTexture("Test GameObject Texture");
+		TextureManager.ReleaseTexture("Joystick Move");
+		TextureManager.ReleaseTexture("Joystick Shoot");
+		TextureManager.ReleaseTexture("Joystick Pivot");
 		System.out.println("Textures Released.");
 	}
 	private void LoadGameObjects() {
-		testGameObject = new TestGameObject(this, glESRenderer);
+		player = new Player(this, glESRenderer);
 		testCamera = new Camera2D();
 		System.out.println("GameObjects Loaded.");
 	}
 	private void DestroyGameObjects() {
-		testGameObject.Destroy();
+		player.Destroy();
 		System.out.println("GameObjects Destroyed.");
 	}
 
@@ -118,6 +140,16 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 			LoadMeshes();
 			LoadTextures();
 			LoadGameObjects();
+
+			//Mesh(es) & Textures for our Joysticks
+			joystickMesh = MeshBuilder.GetMesh("Quad");
+			textureJoystickMove = new Textures();
+			textureJoystickMove.handles[0] = TextureManager.GetTextureID("Joystick Move");
+			textureJoystickShoot = new Textures();
+			textureJoystickShoot.handles[0] = TextureManager.GetTextureID("Joystick Shoot");
+			textureJoystickPivot = new Textures();
+			textureJoystickPivot.handles[0] = TextureManager.GetTextureID("Joystick Pivot");
+
 			SetReady(true);
 			System.out.println("Assets Loaded.");
 		}
@@ -130,10 +162,15 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 
 	public void Update(double _deltaTime) {
 		//Update Camera
-		testCamera.height = 2.0f;
+		testCamera.height = 5.0f;
 		testCamera.width = ((float)screenWidth/(float)screenHeight) * testCamera.height;
 		//Update GameObjects
-		testGameObject.Update(_deltaTime);
+		player.Update(_deltaTime);
+
+		//Move the player. Remember to invert Y-Axis!
+		Vector3 playerTranslation = new Vector3(joystickMove.GetAxis().x, -joystickMove.GetAxis().y, 0.0f);
+		playerTranslation.TimesEqual((float)_deltaTime);
+		player.position.PlusEqual(playerTranslation);
 	}
 
 	private class DrawRequest implements Runnable {
@@ -142,8 +179,58 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 		public void run() {
 			//Clear Buffer
 			glESRenderer.ClearBuffer(GLESRenderer.DEPTH_BUFFER_BIT | GLESRenderer.COLOR_BUFFER_BIT | GLESRenderer.STENCIL_BUFFER_BIT);
+
+			//Clear the matrice stacks
+			glESRenderer.modelStack.Clear();
+			glESRenderer.viewStack.Clear();
+			glESRenderer.projectionStack.Clear();
+
+			//Enable Depth and Render
+			glESRenderer.Enable(GLESRenderer.DEPTH_TEST);
 			glESRenderer.SetToCamera2DView(testCamera);
-			testGameObject.Draw();
+			player.Draw();
+
+			//Clear the matrice stacks
+			glESRenderer.modelStack.Clear();
+			glESRenderer.viewStack.Clear();
+			glESRenderer.projectionStack.Clear();
+
+			//Disable Depth and RenderUI
+			glESRenderer.Disable(GLESRenderer.DEPTH_TEST);
+			glESRenderer.SetToUIView();
+			player.DrawUI();
+
+			//Render our Joysticks
+			Matrix4x4Stack modelStack = glESRenderer.modelStack;
+			modelStack.PushMatrix();
+				/*
+					Convert Joystick values to screen coordinates:
+					joystickShoot.GetPositionPivot().y (Joystick's Y-Position)
+					(1.0f - joystickShoot.GetPositionPivot().y) (Input Y-Axis and Rendering Y-Axis are flipped)
+					(1.0f - (-1.0f) - 1.0f) (ScreenTop - ScreenBottom) - ScreenBottom.
+				*/
+				modelStack.Translate(GetScreenRatio(true) * joystickShoot.GetPositionPivot().x * (1.0f - (-1.0f)) - 1.0f, (1.0f - joystickShoot.GetPositionPivot().y) * (1.0f - (-1.0f)) - 1.0f, 0.0f);
+				modelStack.Scale(GetScreenRatio(true) * joystickShoot.GetDiameter(), joystickShoot.GetDiameter(), 1.0f);
+				glESRenderer.Render(joystickMesh, textureJoystickPivot);
+			modelStack.PopMatrix();
+
+			modelStack.PushMatrix();
+				modelStack.Translate(GetScreenRatio(true) * joystickMove.GetPositionPivot().x * (1.0f - (-1.0f)) - 1.0f, (1.0f - joystickMove.GetPositionPivot().y) * (1.0f - (-1.0f)) - 1.0f, 0.0f);
+				modelStack.Scale(GetScreenRatio(true) * joystickMove.GetDiameter(), joystickMove.GetDiameter(), 1.0f);
+				glESRenderer.Render(joystickMesh, textureJoystickPivot);
+			modelStack.PopMatrix();
+
+			modelStack.PushMatrix();
+				modelStack.Translate(GetScreenRatio(true) * joystickShoot.GetPositionCurrent().x * (1.0f - (-1.0f)) - 1.0f, (1.0f - joystickShoot.GetPositionCurrent().y) * (1.0f - (-1.0f)) - 1.0f, 0.0f);
+				modelStack.Scale(GetScreenRatio(true) * joystickShoot.GetRadius(), joystickShoot.GetRadius(), 1.0f);
+				glESRenderer.Render(joystickMesh, textureJoystickShoot);
+			modelStack.PopMatrix();
+
+			modelStack.PushMatrix();
+				modelStack.Translate(GetScreenRatio(true) * joystickMove.GetPositionCurrent().x * (1.0f - (-1.0f)) - 1.0f, (1.0f - joystickMove.GetPositionCurrent().y) * (1.0f - (-1.0f)) - 1.0f, 0.0f);
+				modelStack.Scale(GetScreenRatio(true) * joystickMove.GetRadius(), joystickMove.GetRadius(), 1.0f);
+				glESRenderer.Render(joystickMesh, textureJoystickMove);
+			modelStack.PopMatrix();
 		}
 	}
 	public void Draw() {
@@ -175,9 +262,29 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 	}
 
 	//Other(s)
-	public void setGLRenderer(GLESRenderer _glESRenderer) {
+	public void SetGLRenderer(GLESRenderer _glESRenderer) {
 		super.setRenderer(_glESRenderer);
 		glESRenderer = _glESRenderer;
+	}
+
+	public int GetScreenWidth() {
+		return screenWidth;
+	}
+	public int GetScreenHeight() {
+		return screenHeight;
+	}
+	//Returns the ratio of the screen width over screen height.
+	public float GetScreenRatio() {
+		return GetScreenRatio(false);
+	}
+	//Returns the ratio of the screen width over screen height if _inverse == false.
+	//Returns the ratio of the screen height over screen width if _inverse == true.
+	public float GetScreenRatio(final boolean _inverse) {
+		if (_inverse) {
+			return (float)screenHeight/(float)screenWidth;
+		} else {
+			return (float)screenWidth/(float)screenHeight;
+		}
 	}
 
 	//Overrides
@@ -186,8 +293,136 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 		throw new RuntimeException("GamePanelSurfaceView cannot setRenderer()! Use setGLRenderer() instead.");
 	}
 
+	private void JoystickEvent(MotionEvent _motionEvent) {
+		//If the event starts from the left side of the screen, then it is meant for joystickMove.
+		//If the event starts from the right side of the screen, then it is meant for joystickShoot.
+
+		//int action = _event.getActionMasked();
+		int action = MotionEventCompat.getActionMasked(_motionEvent);
+
+		//Get the index and ID of the pointer associated with the action.
+		//THE INDEX & ID OF A POINTER IS DIFFERENT!
+		//The INDEX is the pointer's slot in the array in MotionEvent. It may change within the pointer's lifetime.
+		//The ID is a number assigned to the pointer. It is constant throughout the pointer's lifetime.
+		int index = MotionEventCompat.getActionIndex(_motionEvent);
+		int id = _motionEvent.getPointerId(index);
+
+		//The coordinates of the current screen contact, relative to the responding View or Activity.
+		float xPos = _motionEvent.getX(index);
+		float yPos = _motionEvent.getY(index);
+
+		//Normalise xPos and yPos.
+		xPos /= (float)screenHeight;
+		yPos /= (float)screenHeight;
+
+		System.out.println("Pointer xPos: " + String.valueOf(xPos));
+		System.out.println("Pointer yPos: " + String.valueOf(yPos));
+
+		/*if (_event.getPointerCount() > 1) {
+			//Multi touch event.
+		} else {
+			//Single touch event.
+		}*/
+
+		switch (action) {
+			case MotionEvent.ACTION_DOWN: { //Start of a new gesture. A finger has touched the view after a time where NO fingers were touching the view.
+				//Assign a pointer to a joystick.
+				if (xPos < 0.5f) {
+					joystickMove.actionPointerID = id;
+					joystickMove.SetPositionPivot(xPos, yPos);
+					System.out.println("Assigned ID " + String.valueOf(id) + " to joystickMove.");
+				} else {
+					joystickShoot.actionPointerID = id;
+					joystickShoot.SetPositionPivot(xPos, yPos);
+					System.out.println("Assigned ID " + String.valueOf(id) + " to joystickShoot.");
+				}
+			}
+			break;
+			case MotionEvent.ACTION_POINTER_DOWN: { //A another finger has touched the screen.
+				//Assign a pointer to a joystick.
+				if (xPos < 0.5f) {
+					if (!joystickMove.HasValidActionPointerID()) {
+						joystickMove.actionPointerID = id;
+						joystickMove.SetPositionPivot(xPos, yPos);
+						System.out.println("Assigned ID " + String.valueOf(id) + " to joystickMove.");
+					}
+				} else {
+					if (!joystickShoot.HasValidActionPointerID()) {
+						joystickShoot.actionPointerID = id;
+						joystickShoot.SetPositionPivot(xPos, yPos);
+						System.out.println("Assigned ID " + String.valueOf(id) + " to joystickShoot.");
+					}
+				}
+			}
+			break;
+			case MotionEvent.ACTION_MOVE: {
+				//Unlike the rest of the actions which can be fired as separate events, move is related to every pointer.
+				//Thus when ACTION_MOVE is triggered, there can be more than 1 pointer triggering it.
+				//Hence we need to iterate through every pointer to check.
+				for (int p_index = 0;  p_index < _motionEvent.getPointerCount(); ++p_index) {
+					if (_motionEvent.getPointerId(p_index) == joystickMove.actionPointerID) {
+						float currentPosX = _motionEvent.getX(p_index) / (float)screenHeight;
+						float currentPosY = _motionEvent.getY(p_index) / (float)screenHeight;
+						joystickMove.SetPositionCurrent(currentPosX, currentPosY);
+						//System.out.println("joystickMove moved.");
+					}
+					if (_motionEvent.getPointerId(p_index) == joystickShoot.actionPointerID) {
+						float currentPosX = _motionEvent.getX(p_index) / (float)screenHeight;
+						float currentPosY = _motionEvent.getY(p_index) / (float)screenHeight;
+						joystickShoot.SetPositionCurrent(currentPosX, currentPosY);
+						//System.out.println("joystickShoot moved.");
+					}
+				}
+			}
+			break;
+			case MotionEvent.ACTION_UP: { //The last finger has stopped touching the screen.
+				joystickMove.ResetActionPointerID();
+				joystickMove.SetPositionPivot(joystickMoveResetPosition);
+				joystickShoot.ResetActionPointerID();
+				joystickShoot.SetPositionPivot(joystickShootResetPosition);
+				System.out.println("All fingers have been lifted from the screen.");
+			}
+			break;
+			case MotionEvent.ACTION_POINTER_UP: {
+				if (id == joystickMove.actionPointerID) {
+					joystickMove.ResetActionPointerID();
+					joystickMove.SetPositionPivot(joystickMoveResetPosition);
+					System.out.println("joystickMove reset.");
+				} else if (id == joystickShoot.actionPointerID) {
+					joystickShoot.ResetActionPointerID();
+					joystickShoot.SetPositionPivot(joystickShootResetPosition);
+					System.out.println("joystickShoot reset.");
+				}
+			}
+			break;
+			case MotionEvent.ACTION_OUTSIDE: {
+				//Do the same thing as ACTION_UP?
+				/*joystickMove.ResetActionPointerID();
+				joystickMove.SetPositionPivot(joystickMoveResetPosition);
+				joystickShoot.ResetActionPointerID();
+				joystickShoot.SetPositionPivot(joystickShootResetPosition);
+				System.out.println("All fingers have been lifted from the screen.");*/
+
+				//Do nothing? <- Emphasis on the question mark.
+				System.out.println("ACTION_OUTSIDE? No idea what that means.");
+			}
+			break;
+			case MotionEvent.ACTION_CANCEL: {
+				joystickMove.ResetActionPointerID();
+				joystickMove.SetPositionPivot(joystickMoveResetPosition);
+				joystickShoot.ResetActionPointerID();
+				joystickShoot.SetPositionPivot(joystickShootResetPosition);
+				System.out.println("Gesture canceled.");
+			}
+			break;
+			default:
+				//Do nothing
+		}
+	}
+
 	@Override
-	public boolean onTouchEvent(MotionEvent _event) {
+	public boolean onTouchEvent(MotionEvent _motionEvent) {
+		JoystickEvent(_motionEvent);
 		return true;
 	}
 
