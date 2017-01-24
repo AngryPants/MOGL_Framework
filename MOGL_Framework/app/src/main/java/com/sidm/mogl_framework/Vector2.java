@@ -40,6 +40,13 @@ public class Vector2 {
 		return (float)Math.acos( Math.toDegrees(Dot(rhs) / Length() * rhs.Length()) );
 	}
 
+	public Vector2 Equals(final Vector2 rhs) {
+		this.x = rhs.x;
+		this.y = rhs.y;
+
+		return this;
+	}
+
 	public Vector2 Normalised() {
 		return new Vector2(this).Normalise();
 	}

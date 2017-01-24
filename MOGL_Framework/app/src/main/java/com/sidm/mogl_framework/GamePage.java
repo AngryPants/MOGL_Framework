@@ -23,7 +23,7 @@ public class GamePage extends Activity {
 		//Hide Top
 		getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-		GamePanelSurfaceView gamePanelSurfaceView = new GamePanelSurfaceView(this);
+		GamePanelSurfaceView gamePanelSurfaceView = new GamePanelSurfaceView(this,this);
 
 		// Check if the system supports OpenGL ES 2.0.
 		final ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);

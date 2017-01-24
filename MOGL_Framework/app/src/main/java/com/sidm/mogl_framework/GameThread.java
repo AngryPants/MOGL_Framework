@@ -30,7 +30,11 @@ public class GameThread extends Thread {
 	}
 
 	public void StopThread() {
+		System.out.println("Stop Thread");
 		stop = true;
+	}
+	public boolean IsStopped() {
+		return stop;
 	}
 
 	//Returns the time pasted since last frame in seconds.
@@ -50,21 +54,27 @@ public class GameThread extends Thread {
 		//Wait for gamePanelSurfaceView to be ready to start.
 		while (gamePanelSurfaceView.IsReady() == false) {
 			try {
-				sleep(100);
+				sleep(50);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 
 		//Update & Render the game.
-		while (stop == false) {
+		/*while (stop == false) {
 			try {
 				gamePanelSurfaceView.Update(CalculateDeltaTime());
 				gamePanelSurfaceView.Draw();
-				sleep(20); //Sleep so that the GL Thread has a chance to run.
+				sleep(10); //Sleep so that the GL Thread has a chance to run.
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}*/
+
+		while (stop == false) {
+			System.out.println("GameThread While Loop");
+			gamePanelSurfaceView.Update(CalculateDeltaTime());
+			gamePanelSurfaceView.Draw();
 		}
 
 		//Clean up

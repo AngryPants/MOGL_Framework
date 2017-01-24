@@ -152,13 +152,12 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 
 		//Update Uniforms
 		shaderProgram.UpdateUniform(u_MVPMatrixHandle, MVP, false);
-		shaderProgram.UpdateUniform(u_TextureOffsetHandle, _mesh.textureOffset, 2);
-		shaderProgram.UpdateUniform(u_TextureScaleHandle, _mesh.textureScale, 2);
+		shaderProgram.UpdateUniform(u_TextureOffsetHandle, _mesh.GetTextureOffset(), 2);
+		shaderProgram.UpdateUniform(u_TextureScaleHandle, _mesh.GetTextureScale(), 2);
 
 		if (_textures == null) {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
 				shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
-
 				//This fucking line caused SO MUCH TAIJI.
 				//shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
 			}
@@ -166,7 +165,6 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 			for (int i = 0; i < Textures.MAX_TEXTURES; ++i) {
 				if (_textures.handles[i] == TextureManager.INVALID_TEXTURE_HANDLE) {
 					shaderProgram.UpdateUniform(u_TextureEnabledHandle[i], false);
-
 					//This fucking line also caused SO MUCH TAIJI.
 					//shaderProgram.UpdateUniform(u_TexturesHandle[i], TextureManager.INVALID_TEXTURE_HANDLE);
 				} else {
@@ -187,6 +185,22 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 					break;
 				}
 			}
+		}
+	}
+
+	public void RenderText(MeshBuilder.Text _textMesh, Textures _textures, final String _str, float _textWidth, float _textHeight) {
+		if (_textMesh == null) {
+			return;
+		}
+
+		for (int i = 0; i < _str.length(); ++i) {
+			char c = _str.charAt(i);
+			_textMesh.SetCharacter(c);
+			modelStack.PushMatrix();
+			modelStack.Translate(_textWidth* i, 0, 0);
+			modelStack.Scale(_textWidth, _textHeight, 1);
+			Render(_textMesh, _textures);
+			modelStack.PopMatrix();
 		}
 	}
 
@@ -267,6 +281,13 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 
 	public void DeleteShaders() {
 		//Delete Shaders
+		ShaderHelper.RemoveShader("Simple Shader");
+	}
+
+	public void ClearMatrices() {
+		modelStack.Clear();
+		viewStack.Clear();
+		projectionStack.Clear();
 	}
 
 	//Overrides

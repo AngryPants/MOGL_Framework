@@ -4,12 +4,29 @@ package com.sidm.mogl_framework;
 import android.opengl.GLSurfaceView;
 import android.provider.Settings;
 
+import java.util.List;
+import java.util.Vector;
+
 public class Player extends GameObject {
 
 	//Variable(s)
-	Vector3 position;
-	Vector3 scale;
-	float rotation;
+
+
+	Transform transform;
+
+	public Vector<Zombie> zombieList;
+	public Vector<Bullet> bulletList;
+
+	public float f_movSpd;
+
+	public int health;
+	//int i_damage = 0;
+	float f_fireDebounceTimer;
+
+	public Gun gun;
+	public Gun defaultGun;
+
+	public static int i_score =0;
 
 	//Our player's mesh and stuff.
 	MeshBuilder.Mesh mesh;
@@ -19,30 +36,119 @@ public class Player extends GameObject {
 	public Player(GamePanelSurfaceView _gamePanelSurfaceView, GLESRenderer _glESRenderer) {
 		super(_gamePanelSurfaceView, _glESRenderer);
 
-		position = new Vector3();
-		scale = new Vector3(1.0f, 1.0f, 1.0f);
-		rotation = 0.0f;
+		transform = new Transform();
+
+		health = 100;
+
+		f_movSpd = 3.f;
 
 		mesh = MeshBuilder.GetMesh("Quad");
 		textures = new Textures();
 		textures.handles[0] = TextureManager.GetTextureID("Test GameObject Texture");
+
+		bulletList = new Vector<Bullet>(0);
+
+		f_fireDebounceTimer = 0.f;
+
+		gun = new Pistol();
+		defaultGun = gun;
 	}
+
+	public void ReceiveDamage(int damage)
+	{
+		this.health -= damage;
+	}
+
+	public void UpdateBullets(double deltaTIme)
+	{
+
+		for(Bullet bullet:bulletList)
+		{
+			if(bullet.b_isActive == true)
+			{
+				bullet.Update(deltaTIme);
+			}
+		}
+	}
+
+
+	public void Shoot()
+	{
+		//Vector2 forward = new Vector2( (float)(Math.cos(Math.toRadians(rotation))), (float)( Math.sin(Math.toRadians(rotation))) );
+
+		if(f_fireDebounceTimer >= 1.f/gun.f_fireRate && gun.i_ammoInMag > 0)
+		{
+			f_fireDebounceTimer =0.f;
+			gun.i_ammoInMag--;
+			if(gun.name != "Pistol")
+			{
+				gun.i_totalAmmo--;
+			}
+
+
+			for(Bullet bullet : bulletList)
+			{
+
+				if(bullet.b_isActive == false)
+				{
+					bullet.Set(this.transform.GetPosition(),this.transform.GetForward());
+					bullet.damage = gun.i_damage;
+					bullet.b_isActive = true;
+					return;
+				}
+			}
+
+			Bullet temp = new Bullet(this.transform.GetPosition(),this.transform.GetForward(),zombieList);;
+			temp.damage = gun.i_damage;
+
+			//synchronized (bulletList) {
+				bulletList.add(temp);
+			//}
+		}
+
+	}
+
+	public void DrawwAllBullets()
+	{
+		Matrix4x4Stack modelStack = glESRenderer.modelStack;
+		//synchronized (bulletList) {
+			for (Bullet bullet : bulletList) {
+				if (bullet.b_isActive == true) {
+					modelStack.PushMatrix();
+
+					modelStack.Translate(bullet.transform.GetPosition().x, bullet.transform.GetPosition().y, 1);
+					modelStack.Rotate(bullet.transform.GetRotation(), 0, 0, 1);
+					modelStack.Scale(bullet.transform.GetScale().x, bullet.transform.GetScale().y, 1);
+
+					glESRenderer.Render(bullet.bulletMesh, bullet.texture);
+					modelStack.PopMatrix();
+				}
+			}
+		//}
+	}
+
 
 	//Function(s)
 	@Override
 	public void Update(double _deltaTime) {
 		//rotation += _deltaTime * 10.0f;
+
+		f_fireDebounceTimer+=_deltaTime;
+
+		UpdateBullets(_deltaTime);
 	}
 
 	@Override
 	public void Draw() {
 		Matrix4x4Stack modelStack = glESRenderer.modelStack;
 		modelStack.PushMatrix();
-			modelStack.Translate(position.x, position.y, position.z);
-			modelStack.Rotate(rotation, 0.0f, 0.0f, 1.0f);
-			modelStack.Scale(scale.x, scale.y, scale.z);
+			modelStack.Translate(transform.GetPosition().x,transform.GetPosition().y,1);
+			modelStack.Rotate(transform.GetRotation(), 0.0f, 0.0f, 1.0f);
+			modelStack.Scale(transform.GetScale().x,transform.GetScale().y,1);
 			glESRenderer.Render(mesh, textures);
 		modelStack.PopMatrix();
+
+		DrawwAllBullets();
 	}
 
 	@Override

@@ -1,31 +1,55 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-		  package="com.sidm.mogl_framework">
-
-	<!--Required Features-->
-	<uses-feature android:glEsVersion="0x00020000" android:required="true" />
+	package="com.sidm.mogl_framework">
 
 	<application
 		android:allowBackup="true"
 		android:icon="@mipmap/ic_launcher"
 		android:label="@string/app_name"
 		android:supportsRtl="true"
-		android:theme="@style/AppTheme">
-		<!--Main Activity-->
-		<activity android:name=".MainActivity" android:screenOrientation="landscape">
+		android:theme="@style/AppTheme"
+
+		>
+
+		<!--Splash Page-->
+		<activity android:name=".SplashPage" android:screenOrientation="landscape">
 			<intent-filter>
-				<action android:name="android.intent.action.MAIN"/>
-				<category android:name="android.intent.category.LAUNCHER"/>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
 			</intent-filter>
 		</activity>
 
-		<!--GamePage-->
-		<activity android:name=".GamePage" android:screenOrientation="landscape">
+		<!--Main Menu-->
+		<activity android:name=".MainMenu" android:screenOrientation="landscape">
 			<intent-filter>
-				<action android:name="android.intent.action.MAIN"/>
-				<category android:name="android.intent.category.DEFAULT"/>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.DEFAULT" />
 			</intent-filter>
 		</activity>
+
+		<!--Options-->
+		<activity android:name=".OptionsPage" android:screenOrientation="landscape">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
+		<!--High Score-->
+		<activity android:name=".HighScorePage" android:screenOrientation="landscape">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
+		<!--Game Page-->
+		<activity android:name=".GamePage" android:screenOrientation="landscape">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>
+		</activity>
+
 	</application>
 
 </manifest>

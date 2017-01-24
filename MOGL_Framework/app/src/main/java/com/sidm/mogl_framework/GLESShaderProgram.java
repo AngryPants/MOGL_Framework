@@ -116,6 +116,9 @@ public class GLESShaderProgram {
 				GLES20.glDeleteProgram(shaderProgramHandle);
 				shaderProgramHandle = INVALID_SHADER_PROGRAM_ID;
 			}*/
+
+			GLES20.glDeleteShader(vertexShaderHandle);
+			GLES20.glDeleteShader(fragmentShaderHandle);
 		}
 
 		if (shaderProgramHandle == INVALID_SHADER_PROGRAM_ID) {
