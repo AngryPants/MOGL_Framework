@@ -267,11 +267,11 @@ public class GLESRenderer implements GLSurfaceView.Renderer {
 			u_TextureEnabledHandle[i] = shaderProgram.GetUniformHandle("u_TextureEnabled[" + String.valueOf(i) + "]");;
 			u_TexturesHandle[i] = shaderProgram.GetUniformHandle("u_Textures[" + String.valueOf(i) + "]");;
 		}
+		//Use the shader.
+		UseShader(shaderProgram);
 
 		//Set Uniforms
 		shaderProgram.UpdateUniform(u_AlphaDiscardValue, 0.1f);
-		//Use the shader.
-		UseShader(shaderProgram);
 
 		//We have finished initialising and is ready.
 		SetReady(true);

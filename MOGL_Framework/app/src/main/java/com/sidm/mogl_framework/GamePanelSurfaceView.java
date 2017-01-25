@@ -75,6 +75,8 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 	private Textures textureJoystickMove;
 	private Textures textureJoystickShoot;
 	private Textures textureJoystickPivot;
+
+	private MeshBuilder.Mesh bgMesh;
 	private Textures bgTexture;
 
 	// Acceleromemter
@@ -82,7 +84,7 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 	float[] sensorVar = new float[3];
 	private float[] values = {0,0,0};
 
-	//make a placeholder meshh for testing later
+	//Make a placeholder mesh for testing later
 	private MeshBuilder.Mesh ballmesh = MeshBuilder.GetMesh("Quad");
 	private Textures  ballTexture;
 	private long lastTime = System.currentTimeMillis();
@@ -130,7 +132,6 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 		//initialise accelerometer shyt
 		sensor = (SensorManager)getContext().getSystemService(Context.SENSOR_SERVICE);
 		sensor.registerListener(this,sensor.getSensorList(Sensor.TYPE_ACCELEROMETER).get(0),SensorManager.SENSOR_DELAY_NORMAL);
-
 
 		//Create our rendering thread.
 		gameThread = new GameThread(this);
@@ -214,11 +215,21 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 	//Load our assets
 	private void LoadMeshes() {
 		MeshBuilder.GenerateQuad("Quad", new Vertex.Color(0.0f, 1.0f, 1.0f, 1.0f), 1.0f);
+		MeshBuilder.GenerateSprite("Player Sprite");
+		MeshBuilder.GenerateQuad("Background", new Vertex.Color(0.0f, 1.0f, 1.0f, 1.0f), 1.0f);
 		MeshBuilder.GenerateText("Text", new Vertex.Color(1.0f, 1.0f, 1.0f, 1.0f), 16, 16);
 		System.out.println("Meshes Loaded.");
 	}
+	private void ReleaseMeshes() {
+		MeshBuilder.ReleaseMesh("Quad");
+		MeshBuilder.ReleaseSprite("Player Sprite");
+		MeshBuilder.ReleaseMesh("Background");
+		MeshBuilder.ReleaseText("Text");
+		System.out.println("Meshes Released.");
+	}
 	private void LoadTextures() {
 		TextureManager.AddTexture("Test GameObject Texture", getContext(), R.drawable.test_texture, true);
+		TextureManager.AddTexture("Player Texture", getContext(), R.drawable.spritesheet_player_pistol, true);
 		TextureManager.AddTexture("Joystick Move", getContext(), R.drawable.joystick_move, true);
 		TextureManager.AddTexture("Joystick Shoot", getContext(), R.drawable.joystick_shoot, true);
 		TextureManager.AddTexture("Joystick Pivot", getContext(), R.drawable.joystick_pivot, true);
@@ -231,13 +242,9 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 
 		System.out.println("Textures Loaded.");
 	}
-	private void ReleaseMeshes() {
-		MeshBuilder.ReleaseMesh("Quad");
-		MeshBuilder.ReleaseText("Text");
-		System.out.println("Meshes Released.");
-	}
 	private void ReleaseTextures() {
 		TextureManager.ReleaseTexture("Test GameObject Texture");
+		TextureManager.ReleaseTexture("Player Texture");
 		TextureManager.ReleaseTexture("Joystick Move");
 		TextureManager.ReleaseTexture("Font Consolas");
 		TextureManager.ReleaseTexture("Joystick Shoot");
@@ -278,6 +285,9 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 			textureJoystickShoot.handles[0] = TextureManager.GetTextureID("Joystick Shoot");
 			textureJoystickPivot = new Textures();
 			textureJoystickPivot.handles[0] = TextureManager.GetTextureID("Joystick Pivot");
+
+			bgMesh = MeshBuilder.GetMesh("Background");
+			bgMesh.SetTextureScale(10.0f, 10.0f);
 
 			bgTexture = new Textures();
 			bgTexture.handles[0] = TextureManager.GetTextureID("bg");
@@ -359,7 +369,7 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 			player.Draw();
 			zombieSpawner.DrawAllZombie();
 
-			for(int i=0;i<10;++i) {
+			/*for(int i=0;i<10;++i) {
 				for(int j=0;j<10;++j) {
 					modelStack.PushMatrix();
 					modelStack.Translate(-50+i*10,-50+j*10,-1);
@@ -367,7 +377,13 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 					glESRenderer.Render(joystickMesh,bgTexture);
 					modelStack.PopMatrix();
 				}
-			}
+			}*/
+			//I replaced the above with this. Render only 1 mesh but I used the textureScale
+			//to make it have the same effect.
+			modelStack.PushMatrix();
+				modelStack.Scale(100,100,1);
+				glESRenderer.Render(bgMesh,bgTexture);
+			modelStack.PopMatrix();
 
 			//Clear the matrice stacks
 			glESRenderer.ClearMatrices();
@@ -379,12 +395,10 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 
 			//Render our Joysticks
 			modelStack.PushMatrix();
-				/*
-					Convert Joystick values to screen coordinates:
-					joystickShoot.GetPositionPivot().y (Joystick's Y-Position)
-					(1.0f - joystickShoot.GetPositionPivot().y) (Input Y-Axis and Rendering Y-Axis are flipped)
-					(1.0f - (-1.0f) - 1.0f) (ScreenTop - ScreenBottom) - ScreenBottom.
-				*/
+				/*Convert Joystick values to screen coordinates:
+				joystickShoot.GetPositionPivot().y (Joystick's Y-Position)
+				(1.0f - joystickShoot.GetPositionPivot().y) (Input Y-Axis and Rendering Y-Axis are flipped)
+				(1.0f - (-1.0f) - 1.0f) (ScreenTop - ScreenBottom) - ScreenBottom.*/
 				modelStack.Translate(GetScreenRatio(true) * joystickShoot.GetPositionPivot().x * (1.0f - (-1.0f)) - 1.0f, (1.0f - joystickShoot.GetPositionPivot().y) * (1.0f - (-1.0f)) - 1.0f, 0.0f);
 				modelStack.Scale(GetScreenRatio(true) * joystickShoot.GetDiameter(), joystickShoot.GetDiameter(), 1.0f);
 				glESRenderer.Render(joystickMesh, textureJoystickPivot);
@@ -434,9 +448,7 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 
 		canRender = false;
 		glESRenderer.AddToRenderQueue(new DrawRequest());
-		//System.out.println("Added To Render Queue.");
 		requestRender();
-		//System.out.println("Requested Render.");
 	}
 
 	private class DestroyAssets implements Runnable {
@@ -459,9 +471,12 @@ public class GamePanelSurfaceView extends GLSurfaceView implements SurfaceHolder
 	}
 
 	//Other(s)
-	public void SetGLRenderer(GLESRenderer _glESRenderer) {
+	public void SetGLESRenderer(GLESRenderer _glESRenderer) {
 		super.setRenderer(_glESRenderer);
 		glESRenderer = _glESRenderer;
+	}
+	public GLESRenderer GetGLESRenderer() {
+		return glESRenderer;
 	}
 
 	public int GetScreenWidth() {

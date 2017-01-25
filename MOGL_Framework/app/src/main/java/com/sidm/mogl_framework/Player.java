@@ -29,7 +29,10 @@ public class Player extends GameObject {
 	public static int i_score =0;
 
 	//Our player's mesh and stuff.
-	MeshBuilder.Mesh mesh;
+	//MeshBuilder.Mesh mesh;
+	MeshBuilder.Sprite sprite;
+	MeshBuilder.SpriteAnimation walkAnimation;
+	MeshBuilder.SpriteAnimation reloadAnimation;
 	Textures textures;
 
 	//Constructor(s)
@@ -42,9 +45,14 @@ public class Player extends GameObject {
 
 		f_movSpd = 3.f;
 
-		mesh = MeshBuilder.GetMesh("Quad");
+		//mesh = MeshBuilder.GetMesh("Quad");
+		walkAnimation = new MeshBuilder.SpriteAnimation(4, 20, 20, 39, true, 0.4f, false);
+		reloadAnimation = new MeshBuilder.SpriteAnimation(4, 20, 60, 79, true, 0.2f, false);
+		sprite = MeshBuilder.GetSprite("Player Sprite");
+		sprite.animation = walkAnimation;
+
 		textures = new Textures();
-		textures.handles[0] = TextureManager.GetTextureID("Test GameObject Texture");
+		textures.handles[0] = TextureManager.GetTextureID("Player Texture");
 
 		bulletList = new Vector<Bullet>(0);
 
@@ -136,6 +144,8 @@ public class Player extends GameObject {
 		f_fireDebounceTimer+=_deltaTime;
 
 		UpdateBullets(_deltaTime);
+
+		walkAnimation.Update(_deltaTime);
 	}
 
 	@Override
@@ -145,7 +155,8 @@ public class Player extends GameObject {
 			modelStack.Translate(transform.GetPosition().x,transform.GetPosition().y,1);
 			modelStack.Rotate(transform.GetRotation(), 0.0f, 0.0f, 1.0f);
 			modelStack.Scale(transform.GetScale().x,transform.GetScale().y,1);
-			glESRenderer.Render(mesh, textures);
+			//glESRenderer.Render(mesh, textures);
+			glESRenderer.Render(sprite, textures);
 		modelStack.PopMatrix();
 
 		DrawwAllBullets();

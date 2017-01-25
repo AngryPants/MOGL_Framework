@@ -22,8 +22,8 @@ public class MeshBuilder {
 		public int drawMode;
 
 		//Texture Coordinates
-		public float[] textureOffset;
-		public float[] textureScale;
+		protected float[] textureOffset;
+		protected float[] textureScale;
 
 		//We use an array of size 1 for our vboHandle and iboHandle so that we can pass it into
 		//a function that can edit it's value, since Java can only pass primitives by value,
@@ -49,6 +49,15 @@ public class MeshBuilder {
 		}
 		public float[] GetTextureOffset() {
 			return textureOffset;
+		}
+
+		public void SetTextureScale(final float _x, final float _y) {
+			textureScale[0] = _x;
+			textureScale[1] = _y;
+		}
+		public void SetTextureOffset(final float _x, final float _y) {
+			textureOffset[0] = _x;
+			textureOffset[1] = _y;
 		}
 	}
 
@@ -90,6 +99,15 @@ public class MeshBuilder {
 			textureScale[0] = 1.0f / (float)numColumns;
 			textureOffset[0] = column * textureScale[0];
 			textureOffset[1] = (numRows - 1 - row) * textureScale[1];
+		}
+
+		@Override
+		public void SetTextureScale(final float _x, final float _y) {
+			throw new RuntimeException("MeshBuilder.Text cannot SetTextureScale!");
+		}
+		@Override
+		public void SetTextureOffset(final float _x, final float _y) {
+			throw new RuntimeException("MeshBuilder.Text cannot SetTextureOffset!");
 		}
 	}
 
@@ -189,6 +207,14 @@ public class MeshBuilder {
 				textureScale[1] = 1.0f / (float)animation.numRows;
 			}
 			return textureScale;
+		}
+		@Override
+		public void SetTextureScale(final float _x, final float _y) {
+			throw new RuntimeException("MeshBuilder.Sprite cannot SetTextureScale!");
+		}
+		@Override
+		public void SetTextureOffset(final float _x, final float _y) {
+			throw new RuntimeException("MeshBuilder.Sprite cannot SetTextureOffset!");
 		}
 	}
 
